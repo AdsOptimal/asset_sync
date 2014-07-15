@@ -181,7 +181,7 @@ module AssetSync
         if gzipped_size < original_size
           percentage = ((gzipped_size.to_f/original_size.to_f)*100).round(2)
           file.merge!({
-                        :key => gzip_extension(f),
+                        :key => f,
                         :body => File.open(gzipped),
                         :content_encoding => 'gzip'
                       })
@@ -198,11 +198,12 @@ module AssetSync
           ext = File.extname(uncompressed_filename)[1..-1]
           mime = MultiMime.lookup(ext)
           file.merge!({
+            :key => gzip_extension(f),
             :content_type     => mime,
             :content_encoding => 'gzip'
           })
         end
-        log "Uploading: #{f}"
+        log "Uploading: #{gzip_extension(f)}"
       end
 
       if config.aws? && config.aws_rrs?
