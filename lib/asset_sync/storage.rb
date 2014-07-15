@@ -123,6 +123,14 @@ module AssetSync
         delete_file(f, from_remote_files_to_delete)
       end
     end
+    
+    def gzip_extension(path)
+      path.slice!(".gz")
+      s = "#{path}".split(".")
+      return "#{s[0]}.gz" if s.length <= 1
+      s[s.length-1] = "gz.#{s[s.length-1]}"
+      return s.join('.')
+    end
 
     def upload_file(f)
       # TODO output files in debug logs as asset filename only.
@@ -173,7 +181,7 @@ module AssetSync
         if gzipped_size < original_size
           percentage = ((gzipped_size.to_f/original_size.to_f)*100).round(2)
           file.merge!({
-                        :key => f,
+                        :key => gzip_extension(f),
                         :body => File.open(gzipped),
                         :content_encoding => 'gzip'
                       })
