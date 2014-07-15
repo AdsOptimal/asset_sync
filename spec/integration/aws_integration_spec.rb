@@ -28,7 +28,7 @@ describe "AssetSync" do
   }
 
   let(:app_js_gz_regex){ 
-    /#{@prefix}\/application-[a-zA-Z0-9]*.gz.js$/ 
+    /#{@prefix}\/application-[a-zA-Z0-9]*.js.gz$/ 
   }
 
   let(:files){ bucket(@prefix).files }

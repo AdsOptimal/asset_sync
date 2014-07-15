@@ -157,19 +157,13 @@ module AssetSync
         log "Overwriting matching file #{f} with custom headers #{headers.to_s}"
       end
 
-      def gzip_extension(path)
-        s = "#{path}".split(".")
-        return "#{s[0]}.gz" if s.length <= 1
-        s[s.length-1] = "gz.#{s[s.length-1]}"
-        return s.join('.')
-      end
 
-      gzipped = gzip_extension("#{path}/#{f}")
+      gzipped = "#{path}/#{f}.gz"
       ignore = false
 
-      if config.gzip? && f.include? ".gz"
+      if config.gzip? && File.extname(f) == ".gz"
         # Don't bother uploading gzipped assets if we are in gzip_compression mode
-        # as we will overwrite file.css with file.gz.css if it exists.
+        # as we will overwrite file.css with file.css.gz if it exists.
         log "Ignoring: #{f}"
         ignore = true
       elsif config.gzip? && File.exists?(gzipped)
@@ -189,7 +183,7 @@ module AssetSync
           log "Uploading: #{f} instead of #{gzipped} (compression increases this file by #{percentage}%)"
         end
       else
-        if !config.gzip? && f.include? ".gz"
+        if !config.gzip? && File.extname(f) == ".gz"
           # set content encoding for gzipped files this allows cloudfront to properly handle requests with Accept-Encoding
           # http://docs.amazonwebservices.com/AmazonCloudFront/latest/DeveloperGuide/ServingCompressedFiles.html
           uncompressed_filename = f[0..-4]
