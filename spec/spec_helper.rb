@@ -32,22 +32,21 @@ shared_context "mock without Rails" do
     if defined? Rails
       Object.send(:remove_const, :Rails)
     end
-    AssetSync.stub(:log)
+    allow(AssetSync).to receive(:log)
   end
 end
 
 
 shared_context "mock Rails" do
   before(:each) do
-    unless defined? Rails
-      Rails = double 'Rails'
-    end
-    Rails.stub(:env).and_return('test')
-    Rails.stub :application => double('application')
-    Rails.application.stub :config => double('config')
-    Rails.application.config.stub :assets => ActiveSupport::OrderedOptions.new
+    Object.send(:remove_const, :Rails) if defined? Rails
+    Rails = double 'Rails'
+    allow(Rails).to receive(:env).and_return('test')
+    allow(Rails).to receive_messages :application => double('application')
+    allow(Rails.application).to receive_messages :config => double('config')
+    allow(Rails.application.config).to receive_messages :assets => ActiveSupport::OrderedOptions.new
     Rails.application.config.assets.prefix = '/assets'
-    AssetSync.stub(:log)
+    allow(AssetSync).to receive(:log)
   end
 end
 
@@ -56,10 +55,10 @@ shared_context "mock Rails without_yml" do
 
   before(:each) do
     set_rails_root('without_yml')
-    Rails.stub(:public_path).and_return(Rails.root.join('public').to_s)
+    allow(Rails).to receive(:public_path).and_return(Rails.root.join('public').to_s)
   end
 end
 
 def set_rails_root(path)
-  Rails.stub(:root).and_return(Pathname.new(File.join(File.dirname(__FILE__), 'fixtures', path)))
+  allow(Rails).to receive(:root).and_return(Pathname.new(File.join(File.dirname(__FILE__), 'fixtures', path)))
 end
