@@ -238,10 +238,11 @@ module AssetSync
 
     def sync
       # fixes: https://github.com/rumblelabs/asset_sync/issues/19
-      log "AssetSync: Syncing."
-      upload_files
-      delete_extra_remote_files unless keep_existing_remote_files?
-      log "AssetSync: Done."
+      "AssetSync: Skip Syncing."
+      #log "AssetSync: Syncing."
+      #upload_files
+      #delete_extra_remote_files unless keep_existing_remote_files?
+      #log "AssetSync: Done."
     end
 
     private
