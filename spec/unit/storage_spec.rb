@@ -6,7 +6,7 @@ describe AssetSync::Storage do
   describe '#upload_files' do
     before(:each) do
       @local_files = ["local_image2.jpg", "local_image1.jpg", "local_stylesheet1.css", "local_stylesheet2.css"]
-      @remote_files = ["local_image.jpg", "local_stylesheet1.css"]
+      @remote_files = ["local_image.jpg", "local_image3.svg", "local_image4.svg", "local_stylesheet1.css"]
       @config = AssetSync::Config.new
     end
 
@@ -23,7 +23,7 @@ describe AssetSync::Storage do
     end
 
     it 'should allow force overwriting of specific files' do
-      @config.always_upload = ['local_image.jpg']
+      @config.always_upload = ['local_image.jpg', /local_image\d\.svg/]
 
       storage = AssetSync::Storage.new(@config)
       allow(storage).to receive(:local_files).and_return(@local_files)
@@ -84,8 +84,20 @@ describe AssetSync::Storage do
 
 
     it 'should correctly set expire date' do
-      local_files = ['file1.jpg', 'file1-1234567890abcdef1234567890abcdef.jpg']
-      local_files += ['dir1/dir2/file2.jpg', 'dir1/dir2/file2-1234567890abcdef1234567890abcdef.jpg']
+      local_files = [
+        'file1.jpg',
+        'file1-1234567890abcdef1234567890abcdef.jpg',
+        'file1-1234567890abcdef1234567890abcdef.jpg.gz',
+        'file1-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg',
+        'file1-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg.gz'
+      ]
+      local_files += [
+        'dir1/dir2/file2.jpg',
+        'dir1/dir2/file2-1234567890abcdef1234567890abcdef.jpg',
+        'dir1/dir2/file2-1234567890abcdef1234567890abcdef.jpg.gz',
+        'dir1/dir2/file2-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg',
+        'dir1/dir2/file2-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg.gz'
+      ]
       remote_files = []
       storage = AssetSync::Storage.new(@config)
       allow(storage).to receive(:local_files).and_return(local_files)
@@ -99,7 +111,13 @@ describe AssetSync::Storage do
         when 'dir1/dir2/file2.jpg'
           !expect(file).not_to include(:cache_control, :expires)
         when 'file1-1234567890abcdef1234567890abcdef.jpg'
+        when 'file1-1234567890abcdef1234567890abcdef.jpg.gz'
+        when 'file1-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg'
+        when 'file1-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg.gz'
         when 'dir1/dir2/file2-1234567890abcdef1234567890abcdef.jpg'
+        when 'dir1/dir2/file2-1234567890abcdef1234567890abcdef.jpg.gz'
+        when 'dir1/dir2/file2-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg'
+        when 'dir1/dir2/file2-1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef.jpg.gz'
           expect(file).to include(:cache_control, :expires)
         else
           fail

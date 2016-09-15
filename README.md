@@ -1,5 +1,5 @@
 [![Build Status](https://secure.travis-ci.org/rumblelabs/asset_sync.png)](http://travis-ci.org/rumblelabs/asset_sync)
-[![Code Climate](https://codeclimate.com/badge.png)](https://codeclimate.com/github/rumblelabs/asset_sync)
+[![Code Climate](https://codeclimate.com/github/rumblelabs/asset_sync/badges/gpa.svg)](https://codeclimate.com/github/rumblelabs/asset_sync)
 
 # Asset Sync
 
@@ -14,41 +14,12 @@ This was initially built and is intended to work on [Heroku](http://heroku.com) 
 
 If you are upgrading from a version of asset_sync **< 0.2.0** (i.e. 0.1.x). All of the references to config variables have changed to reference those used in **Fog**. Ensure to backup your `asset_sync.rb` or `asset_sync.yml` files and re-run the generator. You may also then need to update your ENV configuration variables (or you can change the ones that are referenced).
 
-## Heroku Labs (BETA)
-
-Previously there were [several issues](http://github.com/rumblelabs/asset_sync/blob/master/docs/heroku.md) with using asset_sync on Heroku as described in our [Heroku dev center article](http://devcenter.heroku.com/articles/cdn-asset-host-rails31).
-
-Now to get everything working smoothly with using **ENV** variables to configure `asset_sync` we just need to enable the [user-env-compile](http://devcenter.heroku.com/articles/labs-user-env-compile) functionality. In short:
-
-    heroku labs:enable user-env-compile -a myapp
-
-Hopefully this will make it's way into the platform as standard.
-
 ## Installation
 
 Add the gem to your Gemfile
 
 ``` ruby
 gem 'asset_sync'
-```
-
-If you want, you can put it within your **:assets** group in your Gemfile.
-
-``` ruby
-group :assets do
-  gem 'sass-rails',   '~> 3.2.3'
-  gem 'coffee-rails', '~> 3.2.1'
-  gem 'uglifier', '>= 1.0.3'
-  gem 'asset_sync'
-end
-```
-
-This is good practice when pre-compiling your assets as it will reduce load time and server memory in production. The only caveat being, you may not be able to use a custom initializer, without perhaps wrapping it with.
-
-``` ruby
-if defined?(AssetSync)
-...
-end
 ```
 
 ### Optimized Fog loading
@@ -59,7 +30,7 @@ you need to load those parts of Fog yourself *before* loading AssetSync:
 
 In your Gemfile:
 ```ruby
-gem "fog", "~>1.20", require "fog/aws/storage"
+gem "fog", "~>1.20", require: "fog/aws/storage"
 gem "asset_sync"
 ```
 
@@ -141,7 +112,8 @@ If you need more control over configuration you will want to use a **custom rail
 
 Configuration using a **YAML** file (a common strategy for Capistrano deployments) is also supported.
 
-The recommend way to configure **asset_sync** is by using **environment variables** however it's up to you, it will work fine if you hard code them too. The main reason is that then your access keys are not checked into version control.
+The recommend way to configure **asset_sync** is by using **environment variables** however it's up to you, it will work fine if you hard code them too. The main reason why using environment variables is recommended is so your access keys are not checked into version control.
+
 
 ### Built-in Initializer (Environment Variables)
 
@@ -221,6 +193,10 @@ AssetSync.configure do |config|
   #
   # Fail silently.  Useful for environments such as Heroku
   # config.fail_silently = true
+  #
+  # Log silently. Default is `true`. But you can set it to false if more logging message are preferred.
+  # Logging messages are sent to `STDOUT` when `log_silently` is falsy
+  # config.log_silently = true
 end
 ```
 
@@ -253,7 +229,7 @@ defaults: &defaults
   # Always upload. Useful if you want to overwrite specific remote assets regardless of their existence
   #  eg: Static files in public often reference non-fingerprinted application.css
   #  note: You will still need to expire them from the CDN's edge cache locations
-  # always_upload: ['application.js', 'application.css']
+  # always_upload: ['application.js', 'application.css', !ruby/regexp '/application-/\d{32}\.css/']
   # Ignored files. Useful if there are some files that are created dynamically on the server and you don't want to upload on deploy.
   # ignored_files: ['ignore_me.js', !ruby/regexp '/ignore_some/\d{32}\.css/']
 
@@ -296,7 +272,8 @@ AssetSync.config.gzip_compression == ENV['ASSET_SYNC_GZIP_COMPRESSION']
 
 #### Fog (Optional)
 
-* **fog\_region**: the region your storage bucket is in e.g. *eu-west-1*
+* **fog\_region**: the region your storage bucket is in e.g. *eu-west-1* (AWS),  *ord* (Rackspace)
+* **fog\_path\_style**: To use buckets with dot in names, check https://github.com/fog/fog/issues/2381#issuecomment-28088524
 
 #### AWS
 
@@ -339,6 +316,44 @@ Or via YAML
 production:
   # ...
   fog_region: 'eu-west-1'
+```
+
+### Amazon (AWS) IAM Users
+
+Amazon has switched to the more secure IAM User security policy model. When generating a user & policy for asset_sync you will need to ensure the policy has the following permissions.
+You __must__ give the user permission to **s3:ListAllMyBuckets** as well as give permission to both the bucket, as well as the bucket's contents (/*). If not given all these permissions you'll see the error ```Expected(200) <=> Actual(403 Forbidden) ```
+
+IAM User Policy Example (replace "bucket_name" with your bucket):
+``` json
+{
+  "Statement": [
+    {
+      "Action": [
+        "s3:ListAllMyBuckets"
+      ],
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::*"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::bucket_name"
+    },
+    {
+      "Action": "s3:*",
+      "Effect": "Allow",
+      "Resource": "arn:aws:s3:::bucket_name/*"
+    }
+  ]
+}
+```
+
+If you want to use IAM roles you must set ```config.aws_iam_roles = true``` in your initializers.
+```
+AssetSync.configure do |config|
+  # ...
+  config.aws_iam_roles = true
+end
 ```
 
 

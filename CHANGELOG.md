@@ -1,4 +1,48 @@
-# RELEASE HISTORY
+# Change Log
+All notable changes to this project will be documented in this file.
+This project adheres to [Semantic Versioning](http://semver.org/).
+
+
+## [Unreleased]
+
+### Added
+
+- Nothing
+
+### Changed
+
+- Nothing
+
+### Fixed
+
+- Nothing
+
+
+## [1.2.1] - 2016-08-19
+
+### Fixed
+
+- Respect value of option `log_silently` even when `ENV['RAILS_GROUPS'] == 'assets'`
+
+
+## [1.2.0] - 2016-08-17
+
+### Added
+
+- Support for `fog_path_style` config option (AWS only) (https://github.com/AssetSync/asset_sync/pull/302)
+
+### Changed
+
+- Set Expires and Cache-Control headers for .gz files (https://github.com/AssetSync/asset_sync/pull/329)
+
+### Fixed
+
+- Add missing runtime dependency declaration for `mime-types` to gemspec (https://github.com/AssetSync/asset_sync/pull/328)
+- Update outdated error message for unknown AssetSync provider (https://github.com/AssetSync/asset_sync/pull/298)
+- Allow hash digest in file name with over 32 chars (for sprockets 3+) (https://github.com/AssetSync/asset_sync/pull/315)
+- Fix `config.log_silently?` (https://github.com/AssetSync/asset_sync/pull/324)
+- Stop using deprecated Ruby API (https://github.com/AssetSync/asset_sync/pull/276)
+
 
 ## v1.1.0 / 2014-08-13
 
@@ -736,3 +780,7 @@ Changes:
     * Improve documentation on ignored_files config option
     * Merge branch 'sinatra'
 
+
+[Unreleased]: https://github.com/AssetSync/asset_sync/compare/v1.2.1...HEAD
+[1.2.1]: https://github.com/AssetSync/asset_sync/compare/v1.2.0...v1.2.1
+[1.2.0]: https://github.com/AssetSync/asset_sync/compare/v1.1.0...v1.2.0

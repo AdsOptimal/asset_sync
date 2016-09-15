@@ -24,6 +24,7 @@ module AssetSync
     attr_accessor :fog_provider          # Currently Supported ['AWS', 'Rackspace']
     attr_accessor :fog_directory         # e.g. 'the-bucket-name'
     attr_accessor :fog_region            # e.g. 'eu-west-1'
+    attr_accessor :fog_path_style        # e.g true
 
     # Amazon AWS
     attr_accessor :aws_access_key_id, :aws_secret_access_key, :aws_reduced_redundancy, :aws_iam_roles
@@ -78,7 +79,7 @@ module AssetSync
     end
 
     def aws?
-      fog_provider == 'AWS'
+      fog_provider =~ /aws/i
     end
 
     def aws_rrs?
@@ -94,7 +95,7 @@ module AssetSync
     end
 
     def log_silently?
-      ENV['RAILS_GROUPS'] == 'assets' || self.log_silently == false
+      !!self.log_silently
     end
 
     def enabled?
@@ -102,15 +103,15 @@ module AssetSync
     end
 
     def rackspace?
-      fog_provider == 'Rackspace'
+      fog_provider =~ /rackspace/i
     end
 
     def google?
-      fog_provider == 'Google'
+      fog_provider =~ /google/i
     end
 
     def yml_exists?
-      defined?(Rails.root) ? File.exists?(self.yml_path) : false
+      defined?(Rails.root) ? File.exist?(self.yml_path) : false
     end
 
     def yml
@@ -139,6 +140,7 @@ module AssetSync
       self.fog_provider           = yml["fog_provider"]
       self.fog_directory          = yml["fog_directory"]
       self.fog_region             = yml["fog_region"]
+      self.fog_path_style         = yml["fog_path_style"]
       self.aws_access_key_id      = yml["aws_access_key_id"]
       self.aws_secret_access_key  = yml["aws_secret_access_key"]
       self.aws_reduced_redundancy = yml["aws_reduced_redundancy"]
@@ -203,10 +205,11 @@ module AssetSync
           :google_storage_access_key_id => google_storage_access_key_id
         })
       else
-        raise ArgumentError, "AssetSync Unknown provider: #{fog_provider} only AWS and Rackspace are supported currently."
+        raise ArgumentError, "AssetSync Unknown provider: #{fog_provider} only AWS, Rackspace and Google are supported currently."
       end
 
       options.merge!({:region => fog_region}) if fog_region && !rackspace?
+      options.merge!({:path_style => fog_path_style}) if fog_path_style && aws?
       return options
     end
 

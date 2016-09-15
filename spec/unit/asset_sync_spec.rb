@@ -12,6 +12,7 @@ describe AssetSync do
         config.aws_secret_access_key = 'bbbb'
         config.fog_directory = 'mybucket'
         config.fog_region = 'eu-west-1'
+        config.fog_path_style = 'true'
         config.existing_remote_files = "keep"
       end
     end
@@ -50,6 +51,10 @@ describe AssetSync do
       expect(AssetSync.config.fog_region).to eq("eu-west-1")
     end
 
+    it "should configure path_style" do
+      expect(AssetSync.config.fog_path_style).to be_truthy
+    end
+
     it "should configure existing_remote_files" do
       expect(AssetSync.config.existing_remote_files).to eq("keep")
     end
@@ -64,6 +69,18 @@ describe AssetSync do
 
     it "should default log_silently to true" do
       expect(AssetSync.config.log_silently).to be_truthy
+    end
+
+    it "log_silently? should reflect the configuration" do
+      AssetSync.config.log_silently = false
+      expect(AssetSync.config.log_silently?).to eq(false)
+    end
+
+    it "log_silently? should always be true if ENV['RAILS_GROUPS'] == 'assets'" do
+      AssetSync.config.log_silently = false
+      allow(ENV).to receive(:[]).with('RAILS_GROUPS').and_return('assets')
+
+      expect(AssetSync.config.log_silently?).to eq(false)
     end
 
     it "should default cdn_distribution_id to nil" do
@@ -104,6 +121,10 @@ describe AssetSync do
 
     it "should configure fog_region" do
       expect(AssetSync.config.fog_region).to eq("eu-west-1")
+    end
+
+    it "should configure path_style" do
+      expect(AssetSync.config.fog_path_style).to be_truthy
     end
 
     it "should configure existing_remote_files" do

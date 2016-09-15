@@ -33,22 +33,7 @@ module AssetSync
     end
 
     def ignored_files
-      files = []
-      Array(self.config.ignored_files).each do |ignore|
-        case ignore
-          when Regexp
-            files += self.local_files.select do |file|
-              file =~ ignore
-            end
-          when String
-            files += self.local_files.select do |file|
-              file.split('/').last == ignore
-            end
-          else
-            log "Error: please define ignored_files as string or regular expression. #{ignore} (#{ignore.class}) ignored."
-        end
-      end
-      files.uniq
+      expand_file_names(self.config.ignored_files)
     end
 
     def local_files
@@ -56,7 +41,7 @@ module AssetSync
     end
 
     def always_upload_files
-      self.config.always_upload.map { |f| File.join(self.config.assets_prefix, f) }
+      expand_file_names(self.config.always_upload)
     end
 
     def files_with_custom_headers
@@ -73,7 +58,7 @@ module AssetSync
           log "Using: Rails 4.0 manifest access"
           manifest = Sprockets::Manifest.new(ActionView::Base.assets_manifest.environment, ActionView::Base.assets_manifest.dir)
           return manifest.assets.values.map { |f| File.join(self.config.assets_prefix, f) }
-        elsif File.exists?(self.config.manifest_path)
+        elsif File.exist?(self.config.manifest_path)
           log "Using: Manifest #{self.config.manifest_path}"
           yml = YAML.load(IO.read(self.config.manifest_path))
    
@@ -91,7 +76,8 @@ module AssetSync
       end
       log "Using: Directory Search of #{path}/#{self.config.assets_prefix}"
       Dir.chdir(path) do
-        Dir["#{self.config.assets_prefix}/**/**"]
+        to_load = self.config.assets_prefix.present? ? "#{self.config.assets_prefix}/**/**" : '**/**'
+        Dir[to_load]
       end
     end
 
@@ -144,7 +130,9 @@ module AssetSync
         :content_type => mime
       }
 
-      if /-[0-9a-fA-F]{32}$/.match(File.basename(f,File.extname(f)))
+      uncompressed_filename = f.sub(/\.gz\z/, '')
+      basename = File.basename(uncompressed_filename, File.extname(uncompressed_filename))
+      if /-[0-9a-fA-F]{32,}$/.match(basename)
         file.merge!({
           :cache_control => "public, max-age=#{one_year}",
           :expires => CGI.rfc1123_date(Time.now + one_year)
@@ -158,8 +146,8 @@ module AssetSync
         log "Overwriting #{f} with custom headers #{files_with_custom_headers[f].to_s}"
       elsif key = self.config.custom_headers.keys.detect {|k| f.match(Regexp.new(k))}
         headers = {}
-        self.config.custom_headers[key].each do |key, value|
-          headers[key.to_sym] = value
+        self.config.custom_headers[key].each do |k, value|
+          headers[k.to_sym] = value
         end
         file.merge! headers
         log "Overwriting matching file #{f} with custom headers #{headers.to_s}"
@@ -174,7 +162,7 @@ module AssetSync
         # as we will overwrite file.css with file.css.gz if it exists.
         log "Ignoring: #{f}"
         ignore = true
-      elsif config.gzip? && File.exists?(gzipped)
+      elsif config.gzip? && File.exist?(gzipped)
         original_size = File.size("#{path}/#{f}")
         gzipped_size = File.size(gzipped)
 
@@ -256,6 +244,25 @@ module AssetSync
         match_data = file.match(REGEXP_FINGERPRINTED_FILES)
         match_data && "#{match_data[1]}/#{match_data[2]}.#{match_data[3]}"
       end.compact
+    end
+
+    def expand_file_names(names)
+      files = []
+      Array(names).each do |name|
+        case name
+          when Regexp
+            files += self.local_files.select do |file|
+              file =~ name
+            end
+          when String
+            files += self.local_files.select do |file|
+              file.split('/').last == name
+            end
+          else
+            log "Error: please define file names as string or regular expression. #{name} (#{name.class}) ignored."
+        end
+      end
+      files.uniq
     end
 
   end
